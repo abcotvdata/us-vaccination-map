@@ -79,7 +79,7 @@
     
     //county layer
     map.on('load', async () => {
-      const countyResponse = await fetch('us-vaccination-map/counties.geojson');
+      const countyResponse = await fetch('counties.geojson');
       countyData = await countyResponse.json()
       countyData.features.forEach(f => {
         if (f.properties.mean_vaccination_rate_county == null)
@@ -119,7 +119,7 @@
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
-      const zipResponse = await fetch('us-vaccination-map/zipcodes.geojson');
+      const zipResponse = await fetch('zipcodes.geojson');
       zipData = await zipResponse.json()
       
       map.addSource('zipcodes', { type: 'geojson', data: zipData });
