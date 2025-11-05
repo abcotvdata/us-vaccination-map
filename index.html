@@ -79,6 +79,8 @@
     
     //county layer
     map.on('load', async () => {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      console.log(`Device type detected: ${isMobile ? 'mobile' : 'desktop'}`);
       const countyResponse = await fetch('counties.geojson');
       countyData = await countyResponse.json()
       countyData.features.forEach(f => {
@@ -119,7 +121,7 @@
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
-      const zipResponse = await fetch('zipcodes.geojson');
+      const zipResponse = await fetch(isMobile ? 'zipcodes_simplified.geojson' : 'zipcodes.geojson');
       zipData = await zipResponse.json()
       
       map.addSource('zipcodes', { type: 'geojson', data: zipData });
