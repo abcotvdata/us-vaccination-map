@@ -395,76 +395,70 @@
           
 
           if (isMobile) {
-            console.log(`(MOBILE) Using async filtering for ${selectedCounty}`);
-            const filteredZips = [];
-            
-            const filterZipsAsync = async () => {
-              const chunkSize = 500;
+            try {
+              const countyFile = selectedCounty
+                .toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/,/g, '')
+                + '.geojson';
 
-              for (let i = 0; i < zipData.features.length; i += chunkSize) {
-                const chunk = zipData.features.slice(i, i + chunkSize);
+              console.log(`(MOBILE) Loading per-county ZIP file: ${countyFile}`);
 
-                chunk.forEach(zip => {
-                  try {
-                    const centroid = turf.center(zip);
-                    const [x, y] = centroid.geometry.coordinates;
+              const res = await fetch(`zip_by_county/${countyFile}`);
+              if (!res.ok) {
+                console.warn(`(MOBILE) Could not fetch ${countyFile} - status: ${res.status}`);
+                return;
+              }
+              
+              const countyZipData = await res.json();
 
-                    if (
-                      x < countyBbox[0] || x > countyBbox[2] ||
-                      y < countyBbox[1] || y > countyBbox[3]
-                    ) {
-                      return;
-                    }
-
-                    if (Array.isArray(countyGeoms)) {
-                      if (countyGeoms.some(g => turf.booleanPointInPolygon(centroid, g))) {
-                        filteredZips.push(zip);
-                      }
-                    } else if (turf.booleanPointInPolygon(centroid, countyGeoms)) {
-                      filteredZips.push(zip);
-                    }
-      
-                  } catch (err) {
-                    console.warn("turf test failed for ZIP", zip.properties.zcta5, err);
-                  }
-                });
-
-                await new Promise(r => setTimeout(r, 0));
+              if (!countyZipData || !countyZipData.features?.length) {
+                console.warn(`(MOBILE) No ZIP features found for ${selectedCounty}`);
+                return;
               }
 
-              console.log(`(MOBILE) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`);
+              console.log(`(MOBILE) Loaded ${countyZipData.features.length} ZIPs for ${selectedCounty}`);
 
-              map.getSource('zipcodes').setData({
-                type: 'FeatureCollection',
-                features: filteredZips
-              });
-            };
+              if (map.getSource('zipcodes')) {
+                map.getSource('zipcodes').setData(countyZipData);
+              } else {
+                map.addSource('zipcodes', {
+                  type: 'geojson',
+                  data: countyZipData
+                });
+              }
 
-            filterZipsAsync();
-            
+              map.triggerRepaint();
+
+              console.log(`(MOBILE) Successfully rendered ZIPs for ${selectedCounty}`);
+
+            } catch (err) {
+                console.error(`(MOBILE) Error loading county ZIPs for ${selectedCounty}:`, err);
+            }
           } else {
             
           filteredZips = zipData.features
-          .map(z => ({
-            ...z,
-            properties: { ...z.properties }
-          }))
-          .filter(zip => {
-            try {
-              const centroid = turf.center(zip);
-              const zipBbox = turf.bbox(zip);
-              if (!turf.booleanDisjoint(turf.bboxPolygon(countyBbox), turf.bboxPolygon(zipBbox))) {
-                if (countyGeoms.some(g => turf.booleanPointInPolygon(centroid, g))) {
-                  return true;
+            .map(z => ({
+              ...z,
+              properties: { ...z.properties }
+            }))
+            .filter(zip => {
+              try {
+                const centroid = turf.center(zip);
+                const zipBbox = turf.bbox(zip);
+                if (!turf.booleanDisjoint(turf.bboxPolygon(countyBbox), turf.bboxPolygon(zipBbox))) {
+                  if (countyGeoms.some(g => turf.booleanPointInPolygon(centroid, g))) {
+                    return true;
+                  }
+                  return countyGeoms.some(g => turf.booleanIntersects(zip, g));
                 }
-                return countyGeoms.some(g => turf.booleanIntersects(zip, g));
-              }
-              return false;
-            } catch (err) {
+                return false;
+              } catch (err) {
               console.warn("turf test failed for ZIP", zip.properties.zcta5, err);
               return false;
-            }
-          });}
+              }
+            });
+          }
           
           console.log(`(DESKTOP) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`)
 
