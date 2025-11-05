@@ -430,11 +430,13 @@
 
               console.log(`(MOBILE) Loaded ${countyZipData.features.length} ZIPs for ${selectedCounty}`);
 
+              if (map.getSource('zipcodes')) {
+                map.getSource('zipcodes').setData({
+                  type: 'FeatureCollection',
+                  features: []
+                });
 
-
-              const src = map.getSource('zipcodes');
-              if (src) {
-                src.setData(countyZipData);
+                map.getSource('zipcodes').setData(countyZipData)
               } else {
                 map.addSource('zipcodes', {
                   type: 'geojson',
