@@ -324,7 +324,7 @@
           );
         } else {
           highlightFeature = countyData.features.find(
-            f => (f.properties.county_state || '').trim().toLowerCase() === (feature.properties. county_state || '').trim().toLowerCase()
+            f => (f.properties.county_state || '').trim().toLowerCase() === (feature.properties.county_state || '').trim().toLowerCase()
           );
         }
         
@@ -391,7 +391,37 @@
           console.log('ZIP feature count before filtering:', zipData.features.length);
 
 //Now safely filter ZIPs
-          const filteredZips = zipData.features
+          let filteredZips;
+          
+
+          if (isMobile) {
+            filteredZips = zipData.features.filter(zip => {
+              try {
+                const centroid = turf.center(zip);
+                const [x, y] = centroid.geometry.coordinates;
+
+                if (
+                  x < countyBbox[0] || x > countyBbox[2] ||
+                  y < countyBbox[1] || y > countyBbox[3]
+                ) {
+                  return false;
+                }
+
+                if (Array.isArray(countyGeoms)) {
+                  return countyGeoms.some(g => turf.booleanPointInPolygon(centroid, g));
+                } else {
+                  return turf.booleanPointInPolygon(centroid, countyGeoms);
+                }
+              } catch (err) {
+                console.warn("turf test failed for ZIP", zip.properties.zcta5, err);
+                return false;
+              }
+            });
+
+            console.log(`(MOBILE) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`);
+          } else {
+            
+          filteredZips = zipData.features
           .map(z => ({
             ...z,
             properties: { ...z.properties }
@@ -411,7 +441,10 @@
               console.warn("turf test failed for ZIP", zip.properties.zcta5, err);
               return false;
             }
-          });
+          });}
+          
+          console.log(`(DESKTOP) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`)
+
 
           const categoryCount = filteredZips.reduce((acc, f) => {
             const cat = f.properties.risk_level_zcta || 'Unknown';
