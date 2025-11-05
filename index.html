@@ -307,28 +307,11 @@
         const isZip = !!feature.properties.zcta5;
         const zoomLevel = isZip ? 12 : 10;
 
-        console.log('Clearing old search data before rendering new result...');
-        if (map.getSource('zipcodes')) {
-          map.getSource('zipcodes').setData({
-            type: 'FeatureCollection',
-            features: []
-          });
-        }
-        if (map.getSource('search-highlight')) {
-          map.getSource('search-highlight').setData({
-            type: 'FeatureCollection',
-            features: []
-          });
-        }
-        
-        
         map.flyTo({
           center: feature.center,
           zoom: zoomLevel,
           essential: true
           });
-
-          
         
         map.once('moveend', () => console.log('Zoom level:', map.getZoom()))
           // highlight effect
@@ -341,31 +324,33 @@
           );
         } else {
           highlightFeature = countyData.features.find(
-            f => (f.properties.county_state || '').trim().toLowerCase() === 
-            (feature.properties.county_state || '').trim().toLowerCase()
+            f => (f.properties.county_state || '').trim().toLowerCase() === (feature.properties.county_state || '').trim().toLowerCase()
           );
         }
+        
+        if(!highlightFeature) {
+          console.warn('No polygon found for highlight.');
+          return;
+        }
+      
+        const highlightData = {
+          type: 'FeatureCollection',
+          features: [highlightFeature]
+        };
 
-        if (highlightFeature){
-          const highlightData = {
-            type: 'FeatureCollection',
-            features: [highlightFeature]
-          };
+        if (map.getSource('search-highlight')) {
+          map.getSource('search-highlight').setData(highlightData);
+        } else {
+          map.addSource('search-highlight', { type: 'geojson', data: highlightData })
+        }
 
-          if (map.getSource('search-highlight')) {
-            map.getSource('search-highlight').setData(highlightData);
-          } else {
-            map.addSource('search-highlight', { type: 'geojson', data: highlightData })
-          }
-
-          if (!map.getLayer('search-highlight-line')) {
-            map.addLayer({
-              id: 'search-highlight-line',
-              type: 'line',
-              source: 'search-highlight',
-              paint: { 'line-color': '#ff6600', 'line-width': 3 }
-            });
-          }
+        if (!map.getLayer('search-highlight-line')) {
+          map.addLayer({
+            id: 'search-highlight-line',
+            type: 'line',
+            source: 'search-highlight',
+            paint: { 'line-color': '#ff6600', 'line-width': 3 }
+          });
         }
 
         if (feature.properties && feature.properties.county_state && !isZip) {
@@ -404,6 +389,9 @@
           console.log('County geometry type:', countyFeature.geometry.type);
           console.log('First county polygon sample:', JSON.stringify(countyGeoms[0].coordinates[0].slice(0, 3)));
           console.log('ZIP feature count before filtering:', zipData.features.length);
+
+//Now safely filter ZIPs
+          let filteredZips;
           
 
           if (isMobile) {
@@ -467,10 +455,9 @@
                 console.error(`(MOBILE) Error loading county ZIPs for ${selectedCounty}:`, err);
               }
             }
-            return;
-          }
-          
-          const filteredZips = zipData.features
+          } else {
+            
+          filteredZips = zipData.features
             .map(z => ({
               ...z,
               properties: { ...z.properties }
@@ -491,27 +478,27 @@
               return false;
               }
             });
-          
-          
-            console.log(`(DESKTOP) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`)
-
-
-         // const categoryCount = filteredZips.reduce((acc, f) => {
-      //      const cat = f.properties.risk_level_zcta || 'Unknown';
-        //    acc[cat] = (acc[cat] || 0) + 1;
-      //      return acc;
-      //    }, {});
-      //    console.log('ZIP category counts in selected county:', categoryCount);
-
-      //    console.log('Filtered ZIPs sample:', filteredZips.slice(0, 5).map(z => z.properties.zcta5));
-      //    console.log(`Found ${filteredZips.length} ZIP codes in ${selectedCounty}`)
-
-            map.getSource('zipcodes').setData({
-              type: 'FeatureCollection',
-              features: filteredZips
-            });
-            map.triggerRepaint()
           }
+          
+          console.log(`(DESKTOP) Filtered ${filteredZips.length} ZIPs for ${selectedCounty}`)
+
+
+          const categoryCount = filteredZips.reduce((acc, f) => {
+            const cat = f.properties.risk_level_zcta || 'Unknown';
+            acc[cat] = (acc[cat] || 0) + 1;
+            return acc;
+          }, {});
+          console.log('ZIP category counts in selected county:', categoryCount);
+
+          console.log('Filtered ZIPs sample:', filteredZips.slice(0, 5).map(z => z.properties.zcta5));
+          console.log(`Found ${filteredZips.length} ZIP codes in ${selectedCounty}`)
+
+          map.getSource('zipcodes').setData({
+            type: 'FeatureCollection',
+            features: filteredZips
+          });
+          map.triggerRepaint()
+        }
         });
 
       //map.on('zoomend', async() => {
