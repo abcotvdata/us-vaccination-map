@@ -404,13 +404,24 @@
 
               console.log(`(MOBILE) Loading per-county ZIP file: ${countyFile}`);
 
-              const res = await fetch(`zip_by_county/${countyFile}`);
+              if (window._activeZipAbortController) {
+                window._activeZipAbortController.abort()
+              }
+              window._activeZipAbortController = new AbortController();
+              
+              
+              const res = await fetch(`zip_by_county/${countyFile}`, {
+                signal: window._activeZipAbortController.signal,
+                cache: 'no-store'
+              });
+
               if (!res.ok) {
                 console.warn(`(MOBILE) Could not fetch ${countyFile} - status: ${res.status}`);
                 return;
               }
-              
-              const countyZipData = await res.json();
+
+              const text = await res.text();
+              const countyZipData = JSON.parse(text);
 
               if (!countyZipData || !countyZipData.features?.length) {
                 console.warn(`(MOBILE) No ZIP features found for ${selectedCounty}`);
@@ -419,8 +430,11 @@
 
               console.log(`(MOBILE) Loaded ${countyZipData.features.length} ZIPs for ${selectedCounty}`);
 
-              if (map.getSource('zipcodes')) {
-                map.getSource('zipcodes').setData(countyZipData);
+
+
+              const src = map.getSource('zipcodes');
+              if (src) {
+                src.setData(countyZipData);
               } else {
                 map.addSource('zipcodes', {
                   type: 'geojson',
@@ -428,12 +442,16 @@
                 });
               }
 
-              map.triggerRepaint();
+              requestAnimationFrame(() => map.triggerRepaint());
 
               console.log(`(MOBILE) Successfully rendered ZIPs for ${selectedCounty}`);
 
             } catch (err) {
+              if (err.name === 'AbortError') {
+                console.log('(MOBILE) Previous ZIP fetch aborted (new search started)');
+              } else {
                 console.error(`(MOBILE) Error loading county ZIPs for ${selectedCounty}:`, err);
+              }
             }
           } else {
             
