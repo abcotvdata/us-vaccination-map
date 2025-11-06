@@ -357,22 +357,39 @@
             try {
               console.log(`(MOBILE) ZIP data empty - fetching county ZIP layer for highlight.`);
               const zipId = String(feature.properties.zcta5);
-              const countyName = (feature.properties.county_state || '').toLowerCase().replace(/\s+/g, '_').replace(/,/g, '');
-              const countyFile = `zip_by_county/${countyName}.geojson`;
+              let countyName = null;
+              try {
+                const resIndex = await fetch('zipcodes.geojson', {cache: 'force-cache'});
+                if (resIndex.ok) {
+                  const allZips = await resIndex.json();
+                  const zipMeta = allZips.features.find(f => String(f.properties.zcta5) === zipId);
+                  if (zipMeta && zipMeta.properties.county_state) {
+                    countyName = zipMeta.properties.county_state.toLowerCase().replace(/\s+/g, '_').replace(/,/g, '');
+                  }
+                }
+              } catch (err) {
+                console.warn(`(MOBILE) Could not read zipcodes index for county lookup`, err);
+              }
 
-              const res = await fetch (countyFile, {cache: 'no-store'});
-              if (res.ok) {
-                const countyZipData = await res.json();
-                console.log(`(MOBILE) Loaded county ZIPs for highlight (${countyZipData.features.length} total).`);
-                currentZipData = countyZipData;
-
-                if (map.getSource('zipcodes')) map.getSource('zipcodes').setData(countyZipData);
+              if (!countyName) {
+                console.warn(`(MOBILE) Could not determine county for ZIP ${zipId}`);
               } else {
+                const countyFile = `zip_by_county/${countyName}.geojson`;
+                console.log(`(MOBILE) Loading county ZIP file for highlight: ${countyFile}`);
+                
+                const res = await fetch (countyFile, {cache: 'no-store'});
+                if (res.ok) {
+                  const countyZipData = await res.json();
+                  console.log(`(MOBILE) Loaded county ZIPs for highlight (${countyZipData.features.length} total).`);
+                  currentZipData = countyZipData;
+
+                  if (map.getSource('zipcodes')) map.getSource('zipcodes').setData(countyZipData);
+                } else {
                   console.warn(`(MOBILE) Could not fetch county ZIP file for highlight: ${countyFile}`);
+                }
               }
             } catch (err) {
               console.error(`(MOBILE) Failed to fetch county ZIP data for highlight`, err);
-
             }
           }
           
