@@ -312,10 +312,19 @@
           });
         
         map.once('moveend', () => console.log('Zoom level:', map.getZoom()))
-          // highlight effect
+        
+        
+        if (isZip && map.getSource('zipcodes')) {
+          console.log('Restoring full ZIP dataset before ZIP search...');
+          const zipResponse = await fetch('zipcodes.geojson');
+          const fullZipData = await zipResponse.json();
+          map.getSource('zipcodes').setData(fullZipData);
+        }
+        
+        // highlight effect
 
         let highlightFeature = null;
-
+        
         if(isZip) {
           highlightFeature = zipData.features.find(
             f => String(f.properties.zcta5) === String(feature.properties.zcta5)
@@ -330,35 +339,37 @@
           console.warn('No polygon found for highlight.');
           return;
         }
-      
-        const highlightData = {
-          type: 'FeatureCollection',
-          features: [highlightFeature]
-        };
 
-        if (map.getSource('search-highlight')) {
-          map.getSource('search-highlight').setData(highlightData);
-        } else {
-          map.addSource('search-highlight', { type: 'geojson', data: highlightData })
-        }
+        if(hightlightFeature) {
+          const highlightData = {
+            type: 'FeatureCollection',
+            features: [highlightFeature]
+          };
 
-        if (!map.getLayer('search-highlight-line')) {
-          map.addLayer({
-            id: 'search-highlight-line',
-            type: 'line',
-            source: 'search-highlight',
-            paint: { 'line-color': '#ff6600', 'line-width': 3 }
-          });
+          if (map.getSource('search-highlight')) {
+            map.getSource('search-highlight').setData(highlightData);
+          } else {
+            map.addSource('search-highlight', { type: 'geojson', data: highlightData })
+          }
+
+          if (!map.getLayer('search-highlight-line')) {
+            map.addLayer({
+              id: 'search-highlight-line',
+              type: 'line',
+              source: 'search-highlight',
+              paint: { 'line-color': '#ff6600', 'line-width': 3 }
+            });
+          }
         }
 
         if (feature.properties && feature.properties.county_state && !isZip) {
           const selectedCounty = feature.properties.county_state;
           console.log('Filtering ZIP codes for:', selectedCounty)
-        // Always reset ZIP source before re-filtering
+          // Always reset ZIP source before re-filtering
           const zipResponse = await fetch('zipcodes.geojson');
           const allZipData = await zipResponse.json();
-        //const countyRes = await fetch('counties.geojson');
-        //const countyData = await countyRes.json();
+          //const countyRes = await fetch('counties.geojson');
+          //const countyData = await countyRes.json();
           const countyFeature = countyData.features.find(f =>
             (f.properties.county_state || '').trim().toLowerCase() ===
             (selectedCounty || '').trim().toLowerCase()
@@ -388,7 +399,7 @@
           console.log('First county polygon sample:', JSON.stringify(countyGeoms[0].coordinates[0].slice(0, 3)));
           console.log('ZIP feature count before filtering:', zipData.features.length);
 
-//Now safely filter ZIPs
+          //Now safely filter ZIPs
           const filteredZips = zipData.features
           .map(z => ({
             ...z,
@@ -425,9 +436,8 @@
             type: 'FeatureCollection',
             features: filteredZips
           });
-          map.triggerRepaint()
         }
-        });
+      });
 
       //map.on('zoomend', async() => {
         //if (map.getZoom() <6 && map.getSource('zipcodes')) {
