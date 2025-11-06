@@ -58,6 +58,10 @@
   </div>
 
   <script>
+
+    //detect mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     //create the map
     const map = new maplibregl.Map({
       container: 'map',
@@ -88,9 +92,7 @@
       maxzoom: 12
     });
 
-    //detect mobile
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
+    
     //add zoom and rotation
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
