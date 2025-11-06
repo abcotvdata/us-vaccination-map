@@ -17,16 +17,39 @@
   
 
   <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    html, body { 
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    #map { 
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+    }
+
+    @supports not (height: 100dvh) {
+      #map { height: 100vh; }
+    }
+
     #search-toggle {
-      position: absolute; top: 10px; left: 10px; z-index: 2;
-      background: white; border-radius: 6px; padding: 5px 10px;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      border-radius: 6px;
+      padding: 5px 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
       font-family: sans-serif;
     }
 
-    .maplibregl-ctrl-top-right {z-index: 10; }
+    .maplibregl-ctrl-top-right {
+      z-index: 1001;
+    }
 
     @media (max-width: 768px) {
       .maplibregl-ctrl-top-right {
@@ -40,8 +63,6 @@
       }
 
       #search-toggle {
-        top: 10px;
-        left: 10px;
         padding: 4px 8px;
         font-size: 14px;
       }
@@ -82,9 +103,9 @@
         ]
       },
       center: isMobile ? [-96,37.5] : [-98, 38.5],
-      zoom: isMobile? 3 : 4
-      minZoom: 2,
-      maxZoom: 12
+      zoom: isMobile? 3 : 4,
+      minzoom: 2,
+      maxzoom: 12
     });
 
     //detect mobile
@@ -116,7 +137,7 @@
         id: 'county-fill',
         type: 'fill',
         source: 'counties',
-        maxZoom: 7,
+        maxzoom: 7,
         paint: {
           'fill-color': [
             'interpolate', ['linear'], ['get', 'mean_vaccination_rate_county'],
@@ -136,7 +157,7 @@
         id: 'county-outline',
         type: 'line',
         source: 'counties',
-        maxZoom: 9,
+        maxzoom: 9,
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
