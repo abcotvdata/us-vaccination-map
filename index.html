@@ -4,51 +4,29 @@
   <meta charset="utf-8" />
   <title>US Vaccination Map</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-
-  <!-- Load MapLibre GL JS -->
+  
+  <!-- Load MapLibre GL JS (the open-source fork of Mapbox GL JS v1) -->
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
 
-  <!-- MapLibre Geocoder -->
+  <!-- Mapbox Geocoder alternative for MapLibre -->
   <script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-geocoder@1.7.0/dist/maplibre-gl-geocoder.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-geocoder@1.7.0/dist/maplibre-gl-geocoder.css" />
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+  
 
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     #search-toggle {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 2;
-      background: white;
-      border-radius: 6px;
-      padding: 5px 10px;
+      position: absolute; top: 10px; left: 10px; z-index: 2;
+      background: white; border-radius: 6px; padding: 5px 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
       font-family: sans-serif;
     }
 
-    .maplibregl-ctrl-top-right { z-index: 10; }
-
-    @media (max-width: 768px) {
-      .maplibregl-ctrl-top-right {
-        top: 70px !important;
-        right: 10px !important;
-      }
-
-      .maplibregl-ctrl-geocoder {
-        max-width: 80% !important;
-        font-size: 14px !important;
-      }
-
-      #search-toggle {
-        top: 10px;
-        left: 10px;
-        padding: 4px 8px;
-        font-size: 14px;
-      }
-    }
+    .maplibregl-ctrl-top-right {z-index: 10; }
   </style>
 </head>
 
@@ -60,11 +38,7 @@
   </div>
 
   <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    // Detect mobile
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    // Create map
+    //create the map
     const map = new maplibregl.Map({
       container: 'map',
       style: {
@@ -74,10 +48,10 @@
             type: 'raster',
             tiles: [
               'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-            ],
+              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors © CARTO'
+            attribution:
+              '© OpenStreetMap contributors © CARTO'
           }
         },
         layers: [
@@ -88,29 +62,34 @@
           }
         ]
       },
-      center: isMobile ? [-96, 37.5] : [-98, 38.5],
-      zoom: isMobile ? 3 : 4,
-      minzoom: 2,
-      maxzoom: 12
+      center: [-98, 38.5],
+      zoom: 4
     });
 
-    // Add zoom and rotation controls
+    //detect mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    //add zoom and rotation
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
 
     let countyData;
     let zipData;
-
+    
+    //county layer
     map.on('load', async () => {
       const countyResponse = await fetch('counties.geojson');
-      countyData = await countyResponse.json();
+      countyData = await countyResponse.json()
       countyData.features.forEach(f => {
         if (f.properties.mean_vaccination_rate_county == null)
           f.properties.mean_vaccination_rate_county = 0;
       });
 
-      map.addSource('counties', { type: 'geojson', data: countyData });
+      map.addSource('counties', {
+        type: 'geojson',
+        data: countyData 
+    });
 
       map.addLayer({
         id: 'county-fill',
@@ -140,14 +119,22 @@
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
-      // ZIP layer handling
+      //const zipResponse = await fetch('zipcodes.geojson');
+      //zipData = await zipResponse.json()
+      
+      //map.addSource('zipcodes', { type: 'geojson', data: zipData });
+
       if (!isMobile) {
+        // Desktop: load full ZIP dataset
         const zipResponse = await fetch('zipcodes.geojson');
         zipData = await zipResponse.json();
-        map.addSource('zipcodes', { type: 'geojson', data: zipData });
+
+      map.addSource('zipcodes', { type: 'geojson', data: zipData });
       } else {
+        // Mobile: start with an empty placeholder source
         console.log('(MOBILE) Skipping full ZIP load, initializing empty ZIP layer');
         zipData = { type: 'FeatureCollection', features: [] };
+
         map.addSource('zipcodes', { type: 'geojson', data: zipData });
       }
 
@@ -177,32 +164,31 @@
         minzoom: 7,
         paint: { 'line-color': '#444', 'line-width': 0.3 }
       });
+      
 
-      // Hover tooltip for counties
+      // Hover tooltip
       map.on('mousemove', 'county-fill', e => {
+        map.getCanvas().style.cursor = 'pointer';
         const f = e.features[0];
         popup.setLngLat(e.lngLat)
-          .setHTML(`<h1>${f.properties.county_state}</h1><br>
-            <b>Mean Vaccination Rate:</b> ${f.properties.mean_vaccination_rate_county}%<br>
-            <b>Risk Level:</b> ${f.properties.risk_level_county}<br>
-            <b>Statewide Measles Cases in 2025:</b> ${f.properties.cases}`)
+          .setHTML(`<h1>${f.properties.county_state}</h1><br><b>Mean Vaccination Rate:</b> ${f.properties.mean_vaccination_rate_county}%<br><b>Risk Level:</b> ${f.properties.risk_level_county}<br><b>Statewide Measles Cases in 2025:</b> ${f.properties.cases}`)
           .addTo(map);
       });
-      map.on('mouseleave', 'county-fill', () => popup.remove());
+      map.on('mouseleave', 'county-fill', () => popup.remove()); //map.getCanvas().style.cursor = ''; });
 
-      // Hover tooltip for ZIPs
+    
+      
+
+      // Tooltip for ZIPs
       map.on('mousemove', 'zip-fill', e => {
         const f = e.features[0];
         popup.setLngLat(e.lngLat)
-          .setHTML(`<h1>ZIP ${f.properties.zcta5}</h1><br>
-            <b>Zip Code Risk Level:</b> ${f.properties.risk_level_zcta}<br>
-            <b>County Risk Level:</b> ${f.properties.risk_level_county}<br>
-            <b>State Measles Cases in 2025:</b> ${f.properties.cases}`)
+          .setHTML(`<h1>ZIP ${f.properties.zcta5}</h1><br><b>Zip Code Risk Level:</b> ${f.properties.risk_level_zcta}<br><b>County Risk Level:</b> ${f.properties.risk_level_county}<br><b>State Measles Cases in 2025</b>: ${f.properties.cases} `)
           .addTo(map);
       });
-      map.on('mouseleave', 'zip-fill', () => popup.remove());
+      map.on('mouseleave', 'zip-fill', () => popup.remove()); //map.getCanvas().style.cursor = ''})
 
-      // Geocoder setup
+      // Free Geocoder
       const geocoder = new MaplibreGeocoder({
         placeholder: 'Search by county or ZIP code...',
         flyTo: false,
@@ -212,6 +198,7 @@
           try {
             const results = [];
             const mode = document.querySelector('input[name="searchMode"]:checked').value;
+            //Normalize query 
             const q = (
               typeof query === 'string'
                 ? query
@@ -220,7 +207,7 @@
                   : ''
             ).trim().toLowerCase();
 
-            if (!q) return { features: [] };
+            if (!q) return { features: []}; //avoid undefined errors
 
             if (mode === 'county') {
               const res = await fetch('counties.geojson');
@@ -228,18 +215,28 @@
               data.features.forEach(f => {
                 const name = (f.properties.county_state || '').toLowerCase();
                 if (name.includes(q)) {
-                  let center = [-98, 38.5];
+                  if (f.properties.mean_vaccination_rate_county == null)
+                    f.properties.mean_vaccination_rate_county = 0;
+                  let center = [-98,38.5];
                   if (f.geometry && f.geometry.coordinates && f.geometry.coordinates.length) {
-                    try { center = turf.center(f).geometry.coordinates; } 
-                    catch (err) { console.warn('turf.center failed', err); }
+                    try {
+                      center = turf.center(f).geometry.coordinates;
+                    } catch (err) {
+                      console.warn('turf.center failed for', f.properties.county_state, err);
+                    }
                   }
-                  results.push({
-                    type: 'Feature',
-                    geometry: { type: 'Point', coordinates: center },
-                    place_name: `${f.properties.county_state}`,
-                    text: `${f.properties.county_state}`,
-                    center,
-                    properties: f.properties
+
+                  //const center = turf.center(f).geometry.coordinates;
+                results.push({
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: center
+                  },
+                  place_name: `${f.properties.county_state}`,
+                  text: `${f.properties.county_state}`,
+                  center,
+                  properties: f.properties
                   });
                 }
               });
@@ -251,13 +248,19 @@
                 if (zip.startsWith(q)) {
                   let center = [-98, 38.5];
                   if (f.geometry && f.geometry.coordinates && f.geometry.coordinates.length) {
-                    try { center = turf.center(f).geometry.coordinates; }
-                    catch (err) { console.warn('turf.center failed for ZIP', zip, err); }
+                    try {
+                      center = turf.center(f).geometry.coordinates;
+                    } catch (err) {
+                      console.warn('turf.center failed for ZIP', zip, err)
+                    }
                   }
                   results.push({
                     type: 'Feature',
-                    geometry: { type: 'Point', coordinates: center },
-                    place_name: `ZIP ${f.properties.zcta5}`,
+                    geometry: {
+                      type: 'Point',
+                      coordinates: center
+                    },
+                    place_name: `ZIP ${f.properties.zcta5 || 'Unknown'}`,
                     text: `ZIP ${f.properties.zcta5}`,
                     center,
                     properties: f.properties
@@ -265,18 +268,304 @@
                 }
               });
             }
+          
+            console.log("Offline geocoder results:", results.length);
 
-            return { features: results };
+            const safeResults = results.map(f => ({
+              ...f,
+              geometry: {
+                type: 'Point',
+                coordinates: f.center
+              }
+            }));
+
+            return { features: safeResults };
+
           } catch (err) {
             console.error("Error in forwardGeocode:", err);
-            return { features: [] };
+            //Always return an empty set on failure
+            return {features: [] };
           }
         }
-      }, { maplibregl: maplibregl });
-
+      },
+        { maplibregl: maplibregl }
+      );
       map.addControl(geocoder, 'top-right');
+
+      // Optional safety override (stops internal flyTo even on Enter)
+      geocoder.on('loading', () => {
+        geocoder._map = null;
+      });
+
+      const geocoderInput = document.querySelector('.maplibregl-ctrl-geocoder input');
+
+      geocoderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const list = document.querySelector('.suggestions');
+          const first = list?.querySelector('.suggestion');
+          if (first) {
+            first.click(); // simulate click
+            e.preventDefault();
+          }
+        }
+      });
+
+
+      // Optional: listen for result events (forces zoom + highlight)
+      geocoder.on('result', async (e) => {
+        const feature = e.result;
+        if (!feature || !feature.center) return;
+
+        const isZip = !!feature.properties.zcta5;
+        const zoomLevel = isZip ? 12 : 9;
+
+        map.flyTo({
+          center: feature.center,
+          zoom: zoomLevel,
+          essential: true
+          });
+        
+        map.once('moveend', () => console.log('Zoom level:', map.getZoom()))
+        
+        let currentZipData = zipData; //in-memory reference
+        
+        if (!isMobile && isZip && map.getSource('zipcodes')) {
+          console.log('Restoring full ZIP dataset before ZIP search...');
+          if (currentZipData && currentZipData.features?.length) {
+            map.getSource('zipcodes').setData(currentZipData);
+          } else {
+          const zipResponse = await fetch('zipcodes.geojson');
+          const fullZipData = await zipResponse.json();
+          zipData = fullZipData;
+          currentZipData = fullZipData;
+          map.getSource('zipcodes').setData(fullZipData);
+          }
+        }
+
+        else if (isMobile && isZip && map.getSource('zipcodes')) {
+          console.log('(MOBILE) Skipping full ZIP dataset to preserve performance');
+        }
+        // highlight effect
+
+        let highlightFeature = null;
+        
+        if (isZip) {
+          if (isMobile && (!currentZipData || !currentZipData.features?.length)) {
+            try {
+              console.log(`(MOBILE) ZIP data empty - fetching county ZIP layer for highlight.`);
+              const zipId = String(feature.properties.zcta5);
+              let countyName = null;
+              try {
+                const resIndex = await fetch('zipcodes.geojson', {cache: 'force-cache'});
+                if (resIndex.ok) {
+                  const allZips = await resIndex.json();
+                  const zipMeta = allZips.features.find(f => String(f.properties.zcta5) === zipId);
+                  if (zipMeta && zipMeta.properties.county_state) {
+                    countyName = zipMeta.properties.county_state.toLowerCase().replace(/\s+/g, '_').replace(/,/g, '');
+                  }
+                }
+              } catch (err) {
+                console.warn(`(MOBILE) Could not read zipcodes index for county lookup`, err);
+              }
+
+              if (!countyName) {
+                console.warn(`(MOBILE) Could not determine county for ZIP ${zipId}`);
+              } else {
+                const countyFile = `zip_by_county/${countyName}.geojson`;
+                console.log(`(MOBILE) Loading county ZIP file for highlight: ${countyFile}`);
+                
+                const res = await fetch (countyFile, {cache: 'no-store'});
+                if (res.ok) {
+                  const countyZipData = await res.json();
+                  console.log(`(MOBILE) Loaded county ZIPs for highlight (${countyZipData.features.length} total).`);
+                  currentZipData = countyZipData;
+
+                  if (map.getSource('zipcodes')) map.getSource('zipcodes').setData(countyZipData);
+                } else {
+                  console.warn(`(MOBILE) Could not fetch county ZIP file for highlight: ${countyFile}`);
+                }
+              }
+            } catch (err) {
+              console.error(`(MOBILE) Failed to fetch county ZIP data for highlight`, err);
+            }
+          }
+          
+          highlightFeature = currentZipData.features.find(
+            f => String(f.properties.zcta5) === String(feature.properties.zcta5)
+          );
+        } else {
+          highlightFeature = countyData.features.find(
+            f => (f.properties.county_state || '').trim().toLowerCase() === (feature.properties.county_state || '').trim().toLowerCase()
+          );
+        }
+        
+        if (!highlightFeature) {
+          console.warn('No polygon found for highlight.');
+        } else {
+          const highlightData = {
+            type: 'FeatureCollection',
+            features: [highlightFeature]
+          };
+
+          if (map.getSource('search-highlight')) {
+            map.getSource('search-highlight').setData(highlightData);
+          } else {
+            map.addSource('search-highlight', { type: 'geojson', data: highlightData })
+          }
+
+          if (!map.getLayer('search-highlight-line')) {
+            map.addLayer({
+              id: 'search-highlight-line',
+              type: 'line',
+              source: 'search-highlight',
+              paint: { 'line-color': '#ff6600', 'line-width': 3 }
+            });
+          }
+        }
+        //county level filtering
+        if (feature.properties && feature.properties.county_state && !isZip) {
+          const selectedCounty = feature.properties.county_state;
+          console.log('Filtering ZIP codes for:', selectedCounty)
+          // Always reset ZIP source before re-filtering
+          //const zipResponse = await fetch('zipcodes.geojson');
+          //const allZipData = await zipResponse.json();
+          //const countyRes = await fetch('counties.geojson');
+          //const countyData = await countyRes.json();
+          const countyFeature = countyData.features.find(f =>
+            (f.properties.county_state || '').trim().toLowerCase() ===
+            (selectedCounty || '').trim().toLowerCase()
+          );
+
+          if (!countyFeature || !countyFeature.geometry) {
+            console.warn('No county match found for:', selectedCounty);
+            return;
+          }
+
+          let countyGeoms = [];
+
+          if (countyFeature.geometry.type === "Polygon") {
+            countyGeoms = [countyFeature.geometry]; // already valid GeoJSON Polygon
+          } else if (countyFeature.geometry.type === "MultiPolygon") {
+           // Flatten to individual Polygon geometries
+            const flat = turf.flatten(countyFeature);
+            countyGeoms = flat.features.map(f => f.geometry);
+          } else {
+            console.warn("Unexpected county geometry type:", countyFeature.geometry.type);
+            return; // bail out if invalid
+          }
+
+          const countyBbox = turf.bbox(countyFeature);
+
+          if (isMobile) {
+            try {
+              const countyFile = selectedCounty
+                .toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/,/g, '')
+                + '.geojson';
+              
+              console.log(`(MOBILE) Loading per-county ZIP file: ${countyFile}`);
+
+              if (window._activeZipAbortController) {
+                window._activeZipAbortController.abort();
+              }
+              window._activeZipAbortController = new AbortController();
+
+              const res = await fetch(`zip_by_county/${countyFile}`, {
+                signal: window._activeZipAbortController.signal,
+                cache: 'no-store'
+              });
+
+              if (!res.ok) {
+                console.warn(`(MOBILE) Could not fetch ${countyFile} - status: ${res.status}`);
+                return;
+              }
+
+              const countyZipData = await res.json();
+              if (!countyZipData || !countyZipData.features?.length) {
+                console.warn(`(MOBILE) No ZIP features found for ${selectedCounty}`);
+                return;
+              }
+
+              console.log(`(MOBILE) Loaded ${countyZipData.features.length} ZIPs for ${selectedCounty}`);
+              if (map.getSource('zipcodes')) {
+                map.getSource('zipcodes').setData(countyZipData);
+              }
+              requestAnimationFrame(() => map.triggerRepaint());
+
+            } catch (err) {
+              if (err.name === 'AbortError') {
+                console.log('(MOBILE) Previous ZIP fetch aborted');
+              } else {
+               console.error(`(MOBILE) Error loading county ZIPs for ${selectedCounty}:`, err);
+              }
+            }
+          } else {
+          //Desktop: In-memory filtering
+          const filteredZips = zipData.features
+            .map(z => ({
+              ...z,
+              properties: { ...z.properties }
+            }))
+            .filter(zip => {
+              try {
+                const centroid = turf.center(zip);
+                const zipBbox = turf.bbox(zip);
+                if (!turf.booleanDisjoint(turf.bboxPolygon(countyBbox), turf.bboxPolygon(zipBbox))) {
+                  if (countyGeoms.some(g => turf.booleanPointInPolygon(centroid, g))) {
+                    return true;
+                  }
+                  return countyGeoms.some(g => turf.booleanIntersects(zip, g));
+                }
+                return false;
+              } catch (err) {
+                console.warn("turf test failed for ZIP", zip.properties.zcta5, err);
+                return false;
+              }
+            });
+
+//          const categoryCount = filteredZips.reduce((acc, f) => {
+//            const cat = f.properties.risk_level_zcta || 'Unknown';
+//            acc[cat] = (acc[cat] || 0) + 1;
+//            return acc;
+//          }, {});
+//          console.log('ZIP category counts in selected county:', categoryCount);
+
+ //         console.log('Filtered ZIPs sample:', filteredZips.slice(0, 5).map(z => z.properties.zcta5));
+          console.log(`Found ${filteredZips.length} ZIP codes in ${selectedCounty}`)
+
+          map.getSource('zipcodes').setData({
+            type: 'FeatureCollection',
+            features: filteredZips
+          });
+        }
+      }
+
     });
-  });
+
+      //map.on('zoomend', async() => {
+        //if (map.getZoom() <6 && map.getSource('zipcodes')) {
+          //const zipRes = await fetch('zipcodes.geojson');
+          //const zipData = await zipRes.json();
+          //map.getSource('zipcodes').setData(zipData);
+          //console.log('Restored all ZIP codes after zooming out');
+        //}
+      //});
+
+
+      // Toggle for search placeholder
+      document.querySelectorAll('input[name="searchMode"]').forEach(radio => {
+        radio.addEventListener('change', e => {
+          const mode = e.target.value;
+          const input = document.querySelector('.maplibregl-ctrl-geocoder input');
+          if (input) {
+            input.placeholder = mode === 'county'
+            ? 'Search by county...'
+            : 'Search by ZIP code...';
+          }
+        });
+      });
+    });
   </script>
 </body>
 </html>
