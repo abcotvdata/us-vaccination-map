@@ -303,7 +303,7 @@
         if (!feature || !feature.center) return;
 
         const isZip = !!feature.properties.zcta5;
-        const zoomLevel = isZip ? 12 : 10;
+        const zoomLevel = isZip ? 12 : 9;
 
         map.flyTo({
           center: feature.center,
