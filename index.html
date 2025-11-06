@@ -313,12 +313,13 @@
         
         map.once('moveend', () => console.log('Zoom level:', map.getZoom()))
         
+        let currentZipData = zipData;
         
         if (isZip && map.getSource('zipcodes')) {
           console.log('Restoring full ZIP dataset before ZIP search...');
           const zipResponse = await fetch('zipcodes.geojson');
           const fullZipData = await zipResponse.json();
-          map.getSource('zipcodes').setData(fullZipData);
+          map.getSource('zipcodes').setData(currentZipData);
         }
         
         // highlight effect
@@ -326,7 +327,7 @@
         let highlightFeature = null;
         
         if (isZip) {
-          highlightFeature = zipData.features.find(
+          highlightFeature = currentzipData.features.find(
             f => String(f.properties.zcta5) === String(feature.properties.zcta5)
           );
         } else {
