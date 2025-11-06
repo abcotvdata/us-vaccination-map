@@ -363,8 +363,8 @@
           const selectedCounty = feature.properties.county_state;
           console.log('Filtering ZIP codes for:', selectedCounty)
           // Always reset ZIP source before re-filtering
-          const zipResponse = await fetch('zipcodes.geojson');
-          const allZipData = await zipResponse.json();
+          //const zipResponse = await fetch('zipcodes.geojson');
+          //const allZipData = await zipResponse.json();
           //const countyRes = await fetch('counties.geojson');
           //const countyData = await countyRes.json();
           const countyFeature = countyData.features.find(f =>
