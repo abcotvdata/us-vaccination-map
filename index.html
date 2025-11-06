@@ -38,6 +38,10 @@
   </div>
 
   <script>
+
+    //detect mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     //create the map
     const map = new maplibregl.Map({
       container: 'map',
@@ -63,12 +67,12 @@
         ]
       },
       center: [-98, 38.5],
-      zoom: 4
+      zoom: 4,
+      minzoom: 2,
+      maxzoom: 12
     });
 
-    //detect mobile
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
+    
     //add zoom and rotation
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
@@ -129,7 +133,7 @@
         const zipResponse = await fetch('zipcodes.geojson');
         zipData = await zipResponse.json();
 
-      map.addSource('zipcodes', { type: 'geojson', data: zipData });
+        map.addSource('zipcodes', { type: 'geojson', data: zipData });
       } else {
         // Mobile: start with an empty placeholder source
         console.log('(MOBILE) Skipping full ZIP load, initializing empty ZIP layer');
