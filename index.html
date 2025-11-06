@@ -122,10 +122,24 @@
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
-      const zipResponse = await fetch('zipcodes.geojson');
-      zipData = await zipResponse.json()
+      //const zipResponse = await fetch('zipcodes.geojson');
+      //zipData = await zipResponse.json()
       
+      //map.addSource('zipcodes', { type: 'geojson', data: zipData });
+
+      if (!isMobile) {
+        // Desktop: load full ZIP dataset
+        const zipResponse = await fetch('zipcodes.geojson');
+        zipData = await zipResponse.json();
+
       map.addSource('zipcodes', { type: 'geojson', data: zipData });
+      } else {
+        // Mobile: start with an empty placeholder source
+        console.log('(MOBILE) Skipping full ZIP load, initializing empty ZIP layer');
+        zipData = { type: 'FeatureCollection', features: [] };
+
+        map.addSource('zipcodes', { type: 'geojson', data: zipData });
+      }
 
       map.addLayer({
         id: 'zip-fill',
@@ -317,6 +331,7 @@
         map.once('moveend', () => console.log('Zoom level:', map.getZoom()))
         
         let currentZipData = zipData; //in-memory reference
+        
         if (!isMobile && isZip && map.getSource('zipcodes')) {
           console.log('Restoring full ZIP dataset before ZIP search...');
           if (currentZipData && currentZipData.features?.length) {
@@ -436,7 +451,9 @@
               }
 
               console.log(`(MOBILE) Loaded ${countyZipData.features.length} ZIPs for ${selectedCounty}`);
-              map.getSource('zipcodes').setData(countyZipData);
+              if (map.getSource('zipcodes')) {
+                map.getSource('zipcodes').setData(countyZipData);
+              }
               requestAnimationFrame(() => map.triggerRepaint());
 
             } catch (err) {
