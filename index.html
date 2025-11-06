@@ -353,6 +353,29 @@
         let highlightFeature = null;
         
         if (isZip) {
+          if (isMobile && (!currentZipData || !currentZipData.features?.length)) {
+            try {
+              console.log(`(MOBILE) ZIP data empty - fetching county ZIP layer for highlight.`);
+              const zipId = String(feature.properties.zcta5);
+              const countyName = (feature.properties.county_state || '').toLowerCase().replace(/\s+/g, '_').replace(/,/g, '');
+              const countyFile = `zip_by_county/${countyName}.geojson`;
+
+              const res = await fetch (countyFile, {cache: 'no-store'});
+              if (res.ok) {
+                const countyZipData = await res.json();
+                console.log(`(MOBILE) Loaded county ZIPs for highlight (${countyZipData.features.length} total).`);
+                currentZipData = countyZipData;
+
+                if (map.getSource('zipcodes')) map.getSource('zipcodes').setData(countyZipData);
+              } else {
+                  console.warn(`(MOBILE) Could not fetch county ZIP file for highlight: ${countyFile}`);
+              }
+            } catch (err) {
+              console.error(`(MOBILE) Failed to fetch county ZIP data for highlight`, err);
+
+            }
+          }
+          
           highlightFeature = currentZipData.features.find(
             f => String(f.properties.zcta5) === String(feature.properties.zcta5)
           );
