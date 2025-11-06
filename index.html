@@ -27,6 +27,25 @@
     }
 
     .maplibregl-ctrl-top-right {z-index: 10; }
+
+    @media (max-width: 768px) {
+      .maplibregl-ctrl-top-right {
+        top: 70px !important;
+        right: 10px !important;
+      }
+
+      .maplibregl-ctrl-geocoder {
+        max-width: 80% !important;
+        font-size: 14px !important;
+      }
+
+      #search-toggle {
+        top: 10px;
+        left: 10px;
+        padding: 4px 8px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 
@@ -48,10 +67,7 @@
             type: 'raster',
             tiles: [
               'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-              //'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-              //'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-            ],
+              'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'],
             tileSize: 256,
             attribution:
               '© OpenStreetMap contributors © CARTO'
@@ -65,8 +81,10 @@
           }
         ]
       },
-      center: [-98, 38.5],
-      zoom: 4
+      center: isMobile ? [-96,37.5] : [-98, 38.5],
+      zoom: isMobile? 3 : 4
+      minZoom: 2,
+      maxZoom: 12
     });
 
     //detect mobile
@@ -98,7 +116,7 @@
         id: 'county-fill',
         type: 'fill',
         source: 'counties',
-        maxzoom: 7,
+        maxZoom: 7,
         paint: {
           'fill-color': [
             'interpolate', ['linear'], ['get', 'mean_vaccination_rate_county'],
@@ -118,7 +136,7 @@
         id: 'county-outline',
         type: 'line',
         source: 'counties',
-        maxzoom: 9,
+        maxZoom: 9,
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
 
@@ -320,7 +338,9 @@
         if (!feature || !feature.center) return;
 
         const isZip = !!feature.properties.zcta5;
-        const zoomLevel = isZip ? 12 : 9;
+        const zoomLevel = isMobile
+          ? (isZip ? 10 : 7)
+          : (isZip ? 12 : 9);
 
         map.flyTo({
           center: feature.center,
