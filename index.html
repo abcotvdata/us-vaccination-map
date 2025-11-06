@@ -27,6 +27,35 @@
     }
 
     .maplibregl-ctrl-top-right {z-index: 10; }
+
+    @media (max-width: 768px) {
+      .maplibregl-ctrl-top-right {
+        position: absolute !important;
+        top: 60px !important;
+        left: 10px !important;
+        right: auto !important;
+      }
+      .maplibregl-ctrl-geocoder {
+        width: 80% !important;
+        max-width: 80% !important;
+        font-size: 14px !important;
+        height: 34px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0,2) !important;
+        border-radius: 6px !important;
+      }
+      .maplibregl-ctrl-geocoder input[type="text"] {
+        height: 30px !important;
+        font-size: 14px !important;
+        padding: 4px 8px !important;
+      }
+      #search-toggle {
+        top: 10px;
+        left: 10px;
+        padding: 4px 8px;
+        font-size: 14px;
+      }
+    }
+
   </style>
 </head>
 
@@ -321,7 +350,7 @@
         if (!feature || !feature.center) return;
 
         const isZip = !!feature.properties.zcta5;
-        const zoomLevel = isZip ? 12 : 9;
+        const zoomLevel = isZip ? 12 : 8;
 
         map.flyTo({
           center: feature.center,
