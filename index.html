@@ -27,26 +27,6 @@
     }
 
     .maplibregl-ctrl-top-right {z-index: 10; }
-
-    @media (max-width: 768px) {
-      .maplibregl-ctrl-top-right {
-        top: 70px !important;
-        right: 10px !important;
-      }
-
-      .maplibregl-ctrl-geocoder {
-        max-width: 80% !important;
-        font-size: 14px !important;
-      }
-
-      #search-toggle {
-        top: 10px;
-        left: 10px;
-        padding: 4px 8px;
-        font-size: 14px;
-      }
-    }
-
   </style>
 </head>
 
@@ -58,10 +38,6 @@
   </div>
 
   <script>
-
-    //detect mobile
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
     //create the map
     const map = new maplibregl.Map({
       container: 'map',
@@ -86,13 +62,13 @@
           }
         ]
       },
-      center: isMobile ? [-96,37.5] : [-98, 38.5],
-      zoom: isMobile? 3 : 4,
-      minzoom: 2,
-      maxzoom: 12
+      center: [-98, 38.5],
+      zoom: 4
     });
 
-    
+    //detect mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     //add zoom and rotation
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
@@ -341,9 +317,7 @@
         if (!feature || !feature.center) return;
 
         const isZip = !!feature.properties.zcta5;
-        const zoomLevel = isMobile
-          ? (isZip ? 10 : 7)
-          : (isZip ? 12 : 9);
+        const zoomLevel = isZip ? 12 : 9;
 
         map.flyTo({
           center: feature.center,
