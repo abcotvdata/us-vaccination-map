@@ -325,7 +325,7 @@
 
         let highlightFeature = null;
         
-        if(isZip) {
+        if (isZip) {
           highlightFeature = zipData.features.find(
             f => String(f.properties.zcta5) === String(feature.properties.zcta5)
           );
@@ -335,12 +335,9 @@
           );
         }
         
-        if(!highlightFeature) {
+        if (!highlightFeature) {
           console.warn('No polygon found for highlight.');
-          return;
-        }
-
-        if(hightlightFeature) {
+        } else {
           const highlightData = {
             type: 'FeatureCollection',
             features: [highlightFeature]
