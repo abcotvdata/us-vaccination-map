@@ -28,7 +28,26 @@
 
     .maplibregl-ctrl-top-right {z-index: 10; }
 
+    #data-source {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: sans-serif;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
     @media (max-width: 768px) {
+      #data-source {
+        font-size: 10px;
+        bottom: 6px;
+        left: 6px;
+        padding: 3px 6px;
+      }
       
       #search-toggle {
         top: 10px;
@@ -103,7 +122,6 @@
 
     }
 
-
   </style>
 </head>
 
@@ -113,6 +131,8 @@
     <label><input type="radio" name="searchMode" value="county" checked> County</label>
     <label><input type="radio" name="searchMode" value="zip"> ZIP Code</label>
   </div>
+
+  <div id="data-source">Source: Nature Medicine, CDC</div>
 
   <script>
 
