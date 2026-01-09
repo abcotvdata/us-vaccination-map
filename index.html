@@ -296,7 +296,7 @@
 
       if (!isMobile) {
         // Desktop: load full ZIP dataset
-        const zipResponse = await fetch('zipcodes.geojson');
+        const zipResponse = await fetch('zipcodes_simplified.geojson');
         zipData = await zipResponse.json();
 
         map.addSource('zipcodes', { type: 'geojson', data: zipData });
@@ -411,7 +411,7 @@
                 }
               });
             } else if (mode === 'zip') {
-              const res = await fetch('zipcodes.geojson');
+              const res = await fetch('zipcodes_simplified.geojson');
               const data = await res.json();
               data.features.forEach(f => {
                 const zip = String(f.properties.zcta5 || '');
@@ -504,7 +504,7 @@
           if (currentZipData && currentZipData.features?.length) {
             map.getSource('zipcodes').setData(currentZipData);
           } else {
-          const zipResponse = await fetch('zipcodes.geojson');
+          const zipResponse = await fetch('zipcodes_simplified.geojson');
           const fullZipData = await zipResponse.json();
           zipData = fullZipData;
           currentZipData = fullZipData;
@@ -526,7 +526,7 @@
               const zipId = String(feature.properties.zcta5);
               let countyName = null;
               try {
-                const resIndex = await fetch('zipcodes.geojson', {cache: 'force-cache'});
+                const resIndex = await fetch('zipcodes_simplified.geojson', {cache: 'force-cache'});
                 if (resIndex.ok) {
                   const allZips = await resIndex.json();
                   const zipMeta = allZips.features.find(f => String(f.properties.zcta5) === zipId);
