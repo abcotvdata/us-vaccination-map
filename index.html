@@ -217,12 +217,12 @@
     //detect mobile
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A';
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZ2llZ3JlZW4xOTkyIiwiYSI6ImNta2JyZGh0bTA3MjMzZG9naTFlcXhlbmUifQ.Rx3x7ABsTgSOsdQSAOCDMw';
 
     //create the map
     const map = new mapboxgl.Map({
       container: 'map',
-      style: 'https://api.mapbox.com/styles/v1/mapbox/light-v11?access_token=pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A',
+      style: 'https://api.mapbox.com/styles/v1/mapbox/light-v10?access_token=pk.eyJ1IjoibWFnZ2llZ3JlZW4xOTkyIiwiYSI6ImNta2JyZGh0bTA3MjMzZG9naTFlcXhlbmUifQ.Rx3x7ABsTgSOsdQSAOCDMw',
       center: isMobile ? [-96,37.5] : [-98, 38.5],
       zoom: isMobile ? 3:4,
       minzoom: 2,
