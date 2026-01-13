@@ -41,7 +41,7 @@
 
     #legend {
       position: absolute;
-      bottom: 70px;
+      bottom: 80px;
       left: 10px;
       background: rgba(255, 255, 255, 0.9);
       padding: 8px 10px;
@@ -68,6 +68,26 @@
       height: 14px;
       border-radius: 2px;
       flex-shrink: 0;
+    }
+
+    #map-title {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px 14px;
+      border-radius: 8px;
+
+      font-family: sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     #search-box {
@@ -132,6 +152,11 @@
         height: 12px;
       }
 
+      #map-title {
+        font-size: 15px;
+        padding: 6px 10px;
+      }
+
       #search-toggle {
         top: 10px;
         left: 10px;
@@ -174,17 +199,19 @@
 <body>
   <div id="map"></div>
   <div id="search-toggle">
-    <label><input type="radio" name="searchMode" value="county" checked> County</label>
-    <label><input type="radio" name="searchMode" value="zip"> ZIP Code</label>
+    <label><input type="radio" name="searchMode" value="county"> County</label>
+    <label><input type="radio" name="searchMode" value="zip" checked> ZIP Code</label>
   </div>
 
+  <div id="map-title">ABC News – Measles: Know Your Risk</div>
+
   <div id="search-box">
-    <input id="search-input" type="text" placeholder="Search by county..." autocomplete="off" />
+    <input id="search-input" type="text" placeholder="Search by ZIP Code..." autocomplete="off" />
     <div id="search-suggestions"></div>
   </div>
 
   <div id="data-source">Source: Nature Health, CDC. <br><i>Data provided through a collaboration of researchers from Boston Children’s Hospital, Harvard Medical School, and Icahn School of Medicine at Mount Sinai.<br>
-  Dashboard resources provided by Boston Children’s Hospital.</i></div>
+  Dashboard resources provided by Boston Children’s Hospital.<br>Map created by Maggie Green, ABC-Owned Television Stations Data Team</i></div>
 
   <div id="legend">
     <div class="legend-title">Measles Risk Level</div>
@@ -217,12 +244,12 @@
     //detect mobile
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZ2llZ3JlZW4xOTkyIiwiYSI6ImNta2JyZGh0bTA3MjMzZG9naTFlcXhlbmUifQ.Rx3x7ABsTgSOsdQSAOCDMw';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A';
 
     //create the map
     const map = new mapboxgl.Map({
       container: 'map',
-      style: 'https://api.mapbox.com/styles/v1/mapbox/light-v10?access_token=pk.eyJ1IjoibWFnZ2llZ3JlZW4xOTkyIiwiYSI6ImNta2JyZGh0bTA3MjMzZG9naTFlcXhlbmUifQ.Rx3x7ABsTgSOsdQSAOCDMw',
+      style: 'https://api.mapbox.com/styles/v1/mapbox/light-v10?access_token=pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A',
       center: isMobile ? [-96,37.5] : [-98, 38.5],
       zoom: isMobile ? 3:4,
       minzoom: 2,
