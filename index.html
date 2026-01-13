@@ -90,6 +90,12 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
+    #map-title.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
     #search-box {
       position: absolute;
       top: 60px;
@@ -262,6 +268,13 @@
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false });
+
+    function hideMapTitle() {
+      const title = document.getElementById('map-title');
+      if (title && !title.classList.contains('hidden')) {
+        title.classList.add('hidden');
+      }
+    }
 
     let countyData;
     let zipData;
@@ -658,6 +671,7 @@
             suggestionsEl.style.display = 'none';
             searchInput.value = f.place_name;
             await handleSearchResult(f);
+            +hideMapTitle();
           });
 
           suggestionsEl.appendChild(div);
