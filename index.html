@@ -215,27 +215,26 @@
   <script>
 
     //detect mobile
+
     function detectMobile() {
-      // Works in iframes: screen width is the embedded viewport width
       const smallScreen = window.matchMedia("(max-width: 768px)").matches;
 
-      // iPadOS often reports "Macintosh", so detect iPad via touch points
-      const iPadOS =
-        navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    // iPadOS often reports desktop UA; this catches it
+      const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 
-    // General touch device hint (helps some Android/tablets)
-      const touchDevice = navigator.maxTouchPoints > 0;
-
-       return smallScreen || iPadOS || (smallScreen && touchDevice);
+      return smallScreen || iPadOS;
     }
 
-    const isMobile = detectMobile();
-      console.log("isMobile:", isMobile, "UA:", navigator.userAgent);
+    const inIframe = (() => {
+      try { return window.self !== window.top; } catch (e) { return true; }
+    })();
 
-    
-    function isSmallScreen() {
-      return window.matchMedia("(max-width: 768px)").matches;
-    }
+    // If embedded, be conservative: treat as mobile unless clearly wide
+    const isMobile = detectMobile() || (inIframe && window.innerWidth <= 700);
+
+    console.log("isMobile:", isMobile, "inIframe:", inIframe, "innerWidth:", window.innerWidth);
+
+
 
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A';
