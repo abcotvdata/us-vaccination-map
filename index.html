@@ -219,18 +219,23 @@
     function detectMobile() {
       const smallScreen = window.matchMedia("(max-width: 768px)").matches;
 
-    // iPadOS often reports desktop UA; this catches it
+      // iPadOS sometimes reports desktop UA
       const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 
-      return smallScreen || iPadOS;
+      // Touch devices (mobile/tablet)
+      const isTouch =
+        "ontouchstart" in window ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+
+      return smallScreen || iPadOS || isTouch;
     }
 
     const inIframe = (() => {
       try { return window.self !== window.top; } catch (e) { return true; }
     })();
 
-    // If embedded, be conservative: treat as mobile unless clearly wide
-    const isMobile = detectMobile() || (inIframe && window.innerWidth <= 700);
+    //Key change: only force "mobile behavior" in iframe if it's touch-capable
+    const isMobile = detectMobile() && (inIframe ? true : true);
 
     console.log("isMobile:", isMobile, "inIframe:", inIframe, "innerWidth:", window.innerWidth);
 
@@ -264,6 +269,10 @@
 
     let countyData;
     let zipData;
+
+    let zipSearchDataCache = null;
+    let zipSearchDataPromise = null;
+
     
     //county layer
     map.on('load', async () => {
@@ -399,16 +408,23 @@
         } else {
           let dataToSearch = zipData;
 
-          if (isMobile && (!zipData || !zipData.features || zipData.features.length === 0)) {
-            const res = await fetch('zipcodes_simplified.geojson', { cache: 'force-cache' });
-            if (res.ok) dataToSearch = await res.json();
+          if (isMobile && (!dataToSearch || !dataToSearch.features || dataToSearch.features.length === 0)) {
+            if (!zipSearchDataPromise) {
+              zipSearchDataPromise = fetch('zipcodes_simplified.geojson', { cache: 'force-cache' })
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null);
+            }
+            zipSearchDataCache = zipSearchDataCache || await zipSearchDataPromise;
+            dataToSearch = zipSearchDataCache || { type: 'FeatureCollection', features: [] };
           }
 
           (dataToSearch.features || []).forEach(f => {
             const zip = String(f.properties.zcta5 || '');
             if (zip.startsWith(q)) {
+              // Use the GeoJSON bbox center if present, otherwise fall back to turf.center.
               let center = [-98, 38.5];
               try { center = turf.center(f).geometry.coordinates; } catch (e) {}
+
               results.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: center },
@@ -657,7 +673,7 @@
             suggestionsEl.style.display = 'none';
             searchInput.value = f.place_name;
             await handleSearchResult(f);
-            +hideMapTitle();
+            hideMapTitle();
           });
 
           suggestionsEl.appendChild(div);
