@@ -39,6 +39,12 @@
       pointer-events: none;
     }
 
+    #data-source a {
+      pointer-events: auto;
+      color: #0056b3;
+      text-decoration: underline;
+    }
+
     #legend {
       position: absolute;
       bottom: 80px;
@@ -273,7 +279,7 @@
   </div>
 
   <div id="data-source">Source: Nature Health, CDC. <br><i>Data provided through a collaboration of researchers from Boston Children’s Hospital, Harvard Medical School, and Icahn School of Medicine at Mount Sinai.<br>
-  Dashboard resources provided by Boston Children’s Hospital.<br>Map design and data integration by Maggie Green, ABC Owned TV Stations Data Team</i></div>
+  Dashboard resources provided by Boston Children’s Hospital and the <a href="https://healthmap.org/measles/" target="_blank" rel="noopener noreferrer">Health Map team.</a><br>Map design and data integration by Maggie Green, ABC Owned TV Stations Data Team</i></div>
 
   <div id="legend">
     <div class="legend-title">Measles Risk Level</div>
@@ -331,7 +337,9 @@
 
 
 
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A';
+    //mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2N5djE4ajA2enEzZ3E3bzBvNWt4MXoifQ.doGW0GKdz-hzNtLM3YgReQ';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiaGVhbHRobWFwIiwiYSI6ImNta2JvanY5dzA2OHozZ3B2dWpmdnQxc3QifQ.SBGLAVdOqXOlhLILTroX6A'
+
 
     //create the map
     const map = new mapboxgl.Map({
@@ -403,6 +411,57 @@
         maxzoom: 9,
         paint: { 'line-color': '#555', 'line-width': 0.5 }
       });
+
+
+      function raiseBasemapLabelsAboveCounty() {
+        const style = map.getStyle();
+        if (!style || !style.layers) return;
+
+          const labelIds = [];
+          const boundaryIds = [];
+
+          for (const layer of style.layers) {
+            const id = layer.id || '';
+
+            // Labels
+            if (layer.type === 'symbol') {
+              if (
+                id.includes('place') ||
+                id.includes('settlement') ||
+                id.includes('state') ||
+                id.includes('country')
+              ) {
+                labelIds.push(id);
+              }
+            }
+
+            // Boundaries (state outlines etc.)
+            if (layer.type === 'line') {
+              if (
+                id.includes('admin-1') ||
+                id.includes('boundary')
+              ) {
+                boundaryIds.push(id);
+              }
+            }
+          }
+
+          // Move boundaries & labels to the very top (above your county fill)
+          boundaryIds.forEach(id => { try { map.moveLayer(id); } catch (e) {} });
+          labelIds.forEach(id => { try { map.moveLayer(id); } catch (e) {} });
+
+          console.log('Moved label layers above county:', labelIds);
+          console.log('Moved boundary layers above county:', boundaryIds);
+      }
+
+      // Call after county-fill is added:
+      raiseBasemapLabelsAboveCounty();
+
+      // Re-run if style reloads for any reason
+      map.on('styledata', () => {
+        if (map.getLayer('county-fill')) raiseBasemapLabelsAboveCounty();
+      });
+
 
       //const zipResponse = await fetch('zipcodes.geojson');
       //zipData = await zipResponse.json()
