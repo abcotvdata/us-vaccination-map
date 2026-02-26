@@ -279,7 +279,9 @@
   </div>
 
   <div id="data-source">Source: Nature Health, CDC. <br><i>Data provided through a collaboration of researchers from Boston Children’s Hospital, Harvard Medical School, and Icahn School of Medicine at Mount Sinai.<br>
-  Dashboard resources provided by Boston Children’s Hospital and the <a href="https://healthmap.org/measles/" target="_blank" rel="noopener noreferrer">Health Map team.</a><br>Map design and data integration by Maggie Green, ABC Owned TV Stations Data Team</i></div>
+  Dashboard resources provided by Boston Children’s Hospital and the <a href="https://healthmap.org/measles/" target="_blank" rel="noopener noreferrer">Health Map team.</a><br>Map design and data integration by Maggie Green, ABC Owned TV Stations Data Team</i><br>
+Note: Vaccination percentages are estimated and may vary from figures reported by other sources.
+</div>
 
   <div id="legend">
     <div class="legend-title">Measles Risk Level</div>
@@ -515,7 +517,7 @@
         map.getCanvas().style.cursor = 'pointer';
         const f = e.features[0];
         popup.setLngLat(e.lngLat)
-          .setHTML(`<h1>${f.properties.county_state}</h1><br><b>Under 5 Vaccination Rate:</b> ${f.properties.mean_vaccination_rate_county}%<br><b>Risk Level:</b> ${f.properties.risk_level_county}<br><b>Statewide Measles Cases in 2025:</b> ${f.properties.cases}`)
+          .setHTML(`<h1>${f.properties.county_state}</h1><br><b>Under 5 Vaccination Estimate:</b> ${f.properties.mean_vaccination_rate_county}%<br><b>Risk Level:</b> ${f.properties.risk_level_county}<br><b>Statewide Measles Cases in 2025:</b> ${f.properties.cases}`)
           .addTo(map);
       });
       map.on('mouseleave', 'county-fill', () => popup.remove()); //map.getCanvas().style.cursor = ''; });
